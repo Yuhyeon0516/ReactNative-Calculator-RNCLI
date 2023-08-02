@@ -8,7 +8,6 @@
 
 import React, {useCallback, useState} from 'react';
 import {
-  NativeModules,
   Platform,
   Pressable,
   SafeAreaView,
@@ -20,6 +19,15 @@ import {
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {executeCalculator} from './NativeCalculatorUtils';
+
+type TypeCalcAction =
+  | 'plus'
+  | 'minus'
+  | 'multiply'
+  | 'divide'
+  | 'clear'
+  | 'equal';
 
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -33,7 +41,10 @@ function App(): JSX.Element {
   const [resultNumber, setResultNumber] = useState('');
   const [inputNumber, setInputNumber] = useState('');
   const [tempNumber, setTempNumber] = useState(0);
-  const [lastAction, setLastAction] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<Exclude<
+    TypeCalcAction,
+    'equal' | 'clear'
+  > | null>(null);
 
   const onPressNumber = useCallback<(pressed: number) => void>(
     pressed => {
@@ -52,11 +63,8 @@ function App(): JSX.Element {
     [resultNumber],
   );
 
-  const onPressAction = useCallback<(action: string) => Promise<void>>(
+  const onPressAction = useCallback<(action: TypeCalcAction) => Promise<void>>(
     async pressed => {
-      console.log(NativeModules.CalculatorModule);
-      console.log(pressed);
-
       if (pressed === 'clear') {
         setInputNumber('');
         setTempNumber(0);
@@ -65,8 +73,8 @@ function App(): JSX.Element {
       }
 
       if (pressed === 'equal') {
-        if (tempNumber) {
-          const result = await NativeModules.CalculatorModule.executeCalc(
+        if (tempNumber && lastAction) {
+          const result = await executeCalculator(
             lastAction,
             tempNumber,
             parseInt(inputNumber),
@@ -88,7 +96,7 @@ function App(): JSX.Element {
         setTempNumber(parseInt(inputNumber));
         setInputNumber('');
       } else {
-        const result = await NativeModules.CalculatorModule.executeCalc(
+        const result = await await executeCalculator(
           pressed,
           tempNumber,
           parseInt(inputNumber),
@@ -152,7 +160,7 @@ function App(): JSX.Element {
             ].map(action => {
               return (
                 <Pressable
-                  onPress={() => onPressAction(action.action)}
+                  onPress={() => onPressAction(action.action as TypeCalcAction)}
                   style={{
                     width: screenSize.width / 6,
                     height: screenSize.width / 6,
