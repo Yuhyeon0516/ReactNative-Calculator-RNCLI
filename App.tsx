@@ -6,8 +6,9 @@
  * @format
  */
 
-import React, {useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
+  NativeModules,
   Platform,
   Pressable,
   SafeAreaView,
@@ -29,13 +30,77 @@ function App(): JSX.Element {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
-  const onPressNumber = useCallback<(pressed: number) => void>(pressed => {
-    console.log(pressed);
-  }, []);
+  const [resultNumber, setResultNumber] = useState('');
+  const [inputNumber, setInputNumber] = useState('');
+  const [tempNumber, setTempNumber] = useState(0);
+  const [lastAction, setLastAction] = useState<string | null>(null);
 
-  const onPressAction = useCallback<(action: string) => void>(pressed => {
-    console.log(pressed);
-  }, []);
+  const onPressNumber = useCallback<(pressed: number) => void>(
+    pressed => {
+      console.log(pressed);
+
+      if (resultNumber) {
+        setResultNumber('');
+      }
+
+      setInputNumber(prev => {
+        const nextNum = parseInt(`${prev}${pressed}`);
+
+        return nextNum.toString();
+      });
+    },
+    [resultNumber],
+  );
+
+  const onPressAction = useCallback<(action: string) => Promise<void>>(
+    async pressed => {
+      console.log(NativeModules.CalculatorModule);
+      console.log(pressed);
+
+      if (pressed === 'clear') {
+        setInputNumber('');
+        setTempNumber(0);
+        setResultNumber('');
+        return;
+      }
+
+      if (pressed === 'equal') {
+        if (tempNumber) {
+          const result = await NativeModules.CalculatorModule.executeCalc(
+            lastAction,
+            tempNumber,
+            parseInt(inputNumber),
+          );
+
+          console.log(result);
+          setResultNumber(result.toString());
+          setTempNumber(0);
+        }
+        return;
+      }
+      setLastAction(pressed);
+
+      if (resultNumber) {
+        setTempNumber(parseInt(resultNumber));
+        setResultNumber('');
+        setInputNumber('');
+      } else if (!tempNumber) {
+        setTempNumber(parseInt(inputNumber));
+        setInputNumber('');
+      } else {
+        const result = await NativeModules.CalculatorModule.executeCalc(
+          pressed,
+          tempNumber,
+          parseInt(inputNumber),
+        );
+
+        console.log(result);
+        setResultNumber(result.toString());
+        setTempNumber(0);
+      }
+    },
+    [inputNumber, lastAction, resultNumber, tempNumber],
+  );
 
   return (
     <SafeAreaView
@@ -47,7 +112,9 @@ function App(): JSX.Element {
       <View style={{flex: 1}}>
         <View
           style={{flex: 1, alignItems: 'flex-end', justifyContent: 'center'}}>
-          <Text style={{fontSize: 48, padding: 48}}>연산 결과</Text>
+          <Text style={{fontSize: 48, padding: 48}}>
+            {resultNumber ? resultNumber : inputNumber}
+          </Text>
         </View>
         <View style={{flex: 1, flexDirection: 'row'}}>
           <View

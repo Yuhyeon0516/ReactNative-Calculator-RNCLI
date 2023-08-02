@@ -10,15 +10,15 @@ import Foundation
 @objc(CalculatorModule)
 class CalculatorModule:NSObject {
   @objc(executeCalc: numberA:numberB:resolver:rejector:)
-  public func executeCalc(_ action: String, numberA: Double, numberB:Double, resolver: RCTPromiseResolveBlock, rejector: RCTPromiseRejectBlock) -> Void {
+  public func executeCalc(_ action:String, numberA:Int, numberB:Int, resolver:RCTPromiseResolveBlock, rejector:RCTPromiseRejectBlock) -> Void{
     if (action == "plus") {
       resolver(numberA + numberB)
-      return;
+      return
     }
     
     if (action == "minuse") {
       resolver(numberA - numberB)
-      return;
+      return
     }
     
     if (action == "multiply") {
@@ -31,6 +31,6 @@ class CalculatorModule:NSObject {
       return
     }
     
-    rejector("Unexpected action type", action, nil);
+    rejector("Unexpected action type", action, nil)
   }
 }
